@@ -44,6 +44,7 @@ for arch in "${arch_builds[@]}"; do
   if is_windows; then
     if [[ "$arch" == "x86" ]]; then
       opus_prefix="$sysroot_dir/x86"
+      export PKG_CONFIG_PATH="$opus_prefix/lib/pkgconfig"
       build_and_install "opus" cmake -G "Visual Studio 17 2022" -A Win32 -DCMAKE_INSTALL_PREFIX="$opus_prefix"
       build_and_install "FFmpeg" configure-static \
         --windows="--target-os=win32 \
@@ -139,6 +140,7 @@ for arch in "${arch_builds[@]}"; do
         --enable-parser=aac_latm
     else
       opus_prefix="$sysroot_dir/x86_64"
+      export PKG_CONFIG_PATH="$opus_prefix/lib/pkgconfig"
       build_and_install "opus" cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX="$opus_prefix"
       build_and_install "FFmpeg" configure-static \
         --windows="--target-os=win64 \
