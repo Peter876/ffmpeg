@@ -15,103 +15,60 @@ jobs:
     strategy:
       matrix:
         platform:
-          - name: linux-x86_64
-            arch_image: x86_64
-            gcc_suffix: manylinux
-            host: ubuntu-latest
-          - name: linux-arm64
-            arch_image: arm64
-            gcc_suffix: manylinux
-            host: arm64-server
-          - name: muslinux-x86_64
-            arch_image: x86_64
-            gcc_suffix: muslinux
-            host: ubuntu-latest
-          - name: android
-            host: ubuntu-latest
-          - name: macos-arm64
-            host: macos-15
           - name: windows-x86_64
+            host: windows-2022
+          - name: windows-x86
             host: windows-2022
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Set up QEMU
-        if: matrix.platform.name == 'linux-arm64'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
       - name: Setup MSYS2
-        if: matrix.platform.name == 'windows-x86_64'
         uses: msys2/setup-msys2@v2
 
       - name: Detect Native CMake Path (Windows)
         id: detect_cmake
-        if: matrix.platform.name == 'windows-x86_64'
         shell: powershell
         run: |
           $cmake = (Get-Command cmake).Source
           echo "cmake_path=$cmake" >> $env:GITHUB_ENV
 
-      - name: Install dependencies (Windows)
+      - name: Install dependencies (Windows x86_64)
         if: matrix.platform.name == 'windows-x86_64'
         shell: msys2 {0}
         run: pacman -S --noconfirm base-devel git python autotools nasm
 
-      - name: Install dependencies (macOS)
-        if: matrix.platform.name == 'macos-arm64'
-        run: |
-          brew install autoconf automake libtool
+      - name: Install dependencies (Windows x86)
+        if: matrix.platform.name == 'windows-x86'
+        shell: msys2 {0}
+        run: pacman -S --noconfirm mingw-w64-i686-toolchain base-devel git python autotools nasm
 
-      - name: Build FFmpeg (Linux)
-        if: matrix.platform.name == 'linux-x86_64' || matrix.platform.name == 'linux-arm64' || matrix.platform.name == 'muslinux-x86_64'
-        run: |
-          docker run --rm -v $(pwd):/app -w /app --env GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-              ghcr.io/pytgcalls/ntgcalls/${{ matrix.platform.gcc_suffix }}-${{ matrix.platform.arch_image }}:latest bash build.sh
-
-      - name: Build FFmpeg (Android)
-        if: matrix.platform.name == 'android'
-        run: bash build.sh --platform="android"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build FFmpeg (Windows)
+      - name: Build FFmpeg (Windows x86_64)
         if: matrix.platform.name == 'windows-x86_64'
         shell: msys2 {0}
         run: |
           export PATH="$(dirname "$(cygpath -u "$cmake_path")"):$PATH"
-          bash build.sh
+          bash build.sh --platform="windows"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build FFmpeg (macOS)
-        if: matrix.platform.name == 'macos-arm64'
-        run: bash build.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Prepare for artifact (Linux, macOS and Android)
-        if: matrix.platform.name != 'windows-x86_64'
+      - name: Build FFmpeg (Windows x86)
+        if: matrix.platform.name == 'windows-x86'
+        shell: msys2 {0}
         run: |
-          tar -czvf ffmpeg.${{ matrix.platform.name }}.tar.gz artifacts
+          export PATH="$(dirname "$(cygpath -u "$cmake_path")"):$PATH"
+          bash build.sh --platform="windows"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare for artifact (Windows)
-        if: matrix.platform.name == 'windows-x86_64'
+        if: matrix.platform.name == 'windows-x86_64' || matrix.platform.name == 'windows-x86'
         run: |
           Compress-Archive -Path artifacts -DestinationPath ffmpeg.${{ matrix.platform.name }}.zip
 
-      - name: Upload artifact (Linux, macOS and Android)
-        uses: actions/upload-artifact@v7
-        if: matrix.platform.name != 'windows-x86_64'
-        with:
-          name: ffmpeg.${{ matrix.platform.name }}.tar.gz
-          path: ffmpeg.${{ matrix.platform.name }}.tar.gz
-
       - name: Upload artifact (Windows)
         uses: actions/upload-artifact@v7
-        if: matrix.platform.name == 'windows-x86_64'
+        if: matrix.platform.name == 'windows-x86_64' || matrix.platform.name == 'windows-x86'
         with:
           name: ffmpeg.${{ matrix.platform.name }}.zip
           path: ffmpeg.${{ matrix.platform.name }}.zip
@@ -128,19 +85,7 @@ jobs:
           platform: windows-x86_64
       - uses: ./.github/actions/download
         with:
-          platform: linux-x86_64
-      - uses: ./.github/actions/download
-        with:
-          platform: linux-arm64
-      - uses: ./.github/actions/download
-        with:
-          platform: muslinux-x86_64
-      - uses: ./.github/actions/download
-        with:
-          platform: macos-arm64
-      - uses: ./.github/actions/download
-        with:
-          platform: android
+          platform: windows-x86
       - name: Env to output
         run: |
           echo "package_paths<<EOF" >> $GITHUB_OUTPUT
