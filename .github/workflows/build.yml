@@ -13,15 +13,18 @@ jobs:
   build:
     runs-on: ${{ matrix.platform.host }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - name: windows-x86_64
             host: windows-2022
             arch: x86_64
+            msystem: MINGW64
             deps: base-devel git python autotools nasm
           - name: windows-x86
             host: windows-2022
             arch: x86
+            msystem: MINGW32
             deps: mingw-w64-i686-toolchain base-devel git python autotools nasm
     steps:
       - name: Check out repository
@@ -29,6 +32,8 @@ jobs:
 
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.platform.msystem }}
 
       - name: Detect Native CMake Path (Windows)
         id: detect_cmake
