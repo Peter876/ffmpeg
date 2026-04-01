@@ -12,6 +12,7 @@ import meson from python3
 import ninja from python3
 
 sysroot_dir="$BUILD_KIT_DIR/usr"
+selected_windows_arch="${FFMPEG_WINDOWS_ARCH:-}"
 
 if is_linux; then
   build_and_install "libva" meson --prefix="$sysroot_dir"
@@ -34,10 +35,21 @@ if is_android; then
 fi
 
 if is_windows; then
-  arch_builds=(
-    "x86_64"
-    "x86"
-  )
+  # Build a single Windows target per run to avoid leaking MSVC state across
+  # architectures during sequential x86_64/x86 builds.
+  arch_builds=("x86_64")
+
+  if [[ -n "$selected_windows_arch" ]]; then
+    case "$selected_windows_arch" in
+      x86|x86_64)
+        arch_builds=("$selected_windows_arch")
+        ;;
+      *)
+        echo "Unsupported FFMPEG_WINDOWS_ARCH: $selected_windows_arch" >&2
+        exit 1
+        ;;
+    esac
+  fi
 fi
 
 for arch in "${arch_builds[@]}"; do

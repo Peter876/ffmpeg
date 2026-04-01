@@ -10,22 +10,17 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Env to output
-      if: |
-        !(inputs.platform == 'windows-x86_64')
+    - name: Select artifact format
       shell: bash
       run: |
-        PACKAGE_NAME=ffmpeg.${{ inputs.platform }}.tar.gz
+        if [[ "${{ inputs.platform }}" == windows-* ]]; then
+          PACKAGE_NAME=ffmpeg.${{ inputs.platform }}.zip
+        else
+          PACKAGE_NAME=ffmpeg.${{ inputs.platform }}.tar.gz
+        fi
+
         echo "package_name=$PACKAGE_NAME" >> $GITHUB_ENV
-        echo "$PACKAGE_NAME/ffmpeg.${{ inputs.platform }}.tar.gz" >> package_paths.env
-    - name: Env to output for Windows
-      if: |
-        inputs.platform == 'windows-x86_64'
-      shell: bash
-      run: |
-        PACKAGE_NAME=ffmpeg.${{ inputs.platform }}.zip
-        echo "package_name=$PACKAGE_NAME" >> $GITHUB_ENV
-        echo "$PACKAGE_NAME/ffmpeg.${{ inputs.platform }}.zip" >> package_paths.env
+        echo "$PACKAGE_NAME/$PACKAGE_NAME" >> package_paths.env
     - uses: actions/download-artifact@v8
       with:
         name: ${{ env.package_name }}

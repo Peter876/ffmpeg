@@ -17,8 +17,12 @@ jobs:
         platform:
           - name: windows-x86_64
             host: windows-2022
+            arch: x86_64
+            deps: base-devel git python autotools nasm
           - name: windows-x86
             host: windows-2022
+            arch: x86
+            deps: mingw-w64-i686-toolchain base-devel git python autotools nasm
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -33,42 +37,25 @@ jobs:
           $cmake = (Get-Command cmake).Source
           echo "cmake_path=$cmake" >> $env:GITHUB_ENV
 
-      - name: Install dependencies (Windows x86_64)
-        if: matrix.platform.name == 'windows-x86_64'
+      - name: Install dependencies (Windows)
         shell: msys2 {0}
-        run: pacman -S --noconfirm base-devel git python autotools nasm
+        run: pacman -S --noconfirm ${{ matrix.platform.deps }}
 
-      - name: Install dependencies (Windows x86)
-        if: matrix.platform.name == 'windows-x86'
-        shell: msys2 {0}
-        run: pacman -S --noconfirm mingw-w64-i686-toolchain base-devel git python autotools nasm
-
-      - name: Build FFmpeg (Windows x86_64)
-        if: matrix.platform.name == 'windows-x86_64'
+      - name: Build FFmpeg (Windows)
         shell: msys2 {0}
         run: |
           export PATH="$(dirname "$(cygpath -u "$cmake_path")"):$PATH"
           bash build.sh --platform="windows"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build FFmpeg (Windows x86)
-        if: matrix.platform.name == 'windows-x86'
-        shell: msys2 {0}
-        run: |
-          export PATH="$(dirname "$(cygpath -u "$cmake_path")"):$PATH"
-          bash build.sh --platform="windows"
-        env:
+          FFMPEG_WINDOWS_ARCH: ${{ matrix.platform.arch }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare for artifact (Windows)
-        if: matrix.platform.name == 'windows-x86_64' || matrix.platform.name == 'windows-x86'
         run: |
           Compress-Archive -Path artifacts -DestinationPath ffmpeg.${{ matrix.platform.name }}.zip
 
       - name: Upload artifact (Windows)
         uses: actions/upload-artifact@v7
-        if: matrix.platform.name == 'windows-x86_64' || matrix.platform.name == 'windows-x86'
         with:
           name: ffmpeg.${{ matrix.platform.name }}.zip
           path: ffmpeg.${{ matrix.platform.name }}.zip
