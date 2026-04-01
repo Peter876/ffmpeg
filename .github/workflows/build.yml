@@ -24,8 +24,8 @@ jobs:
           - name: windows-x86
             host: windows-2022
             arch: x86
-            msystem: MINGW32
-            deps: mingw-w64-i686-toolchain base-devel git python autotools nasm
+            msystem: MINGW64
+            deps: base-devel git python autotools nasm
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
