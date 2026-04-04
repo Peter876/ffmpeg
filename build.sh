@@ -61,8 +61,10 @@ for arch in "${arch_builds[@]}"; do
       export LIB="${LIB//\\x64/\\x86}"; export LIB="${LIB//\/x64/\/x86}"
       export LIBPATH="${LIBPATH//\\x64/\\x86}"; export LIBPATH="${LIBPATH//\/x64/\/x86}"
       # Force x86 target for MSVC compiler and linker
-      extra_cflags="-arch:SSE2"
-      extra_ldflags="-MACHINE:X86"
+      # Use /arch:SSE2 for compatibility and /MACHINE:X86 for the linker.
+      # We also ignore MSVCRT to avoid conflicts with static libs if any.
+      extra_cflags="/arch:SSE2"
+      extra_ldflags="/MACHINE:X86 /NODEFAULTLIB:MSVCRT"
       echo "[info] Switched MSVC environment to x86"
     fi
 
