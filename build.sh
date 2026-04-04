@@ -57,7 +57,7 @@ for arch in "${arch_builds[@]}"; do
       export LIB="${LIB//\\x64/\\x86}"; export LIB="${LIB//\/x64/\/x86}"
       export LIBPATH="${LIBPATH//\\x64/\\x86}"; export LIBPATH="${LIBPATH//\/x64/\/x86}"
       # Force x86 target for MSVC compiler and linker
-      extra_configure_flags="--extra-cflags=-arch:IA32 --extra-ldflags=/MACHINE:X86"
+      extra_configure_flags="--extra-ldflags=/MACHINE:X86"
       echo "[info] Switched MSVC environment to x86"
     fi
 
