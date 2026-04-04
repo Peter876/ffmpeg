@@ -47,6 +47,7 @@ fi
 for arch in "${arch_builds[@]}"; do
   if is_windows; then
     # Adjust MSVC environment for x86. build-toolkit defaults to x64.
+    extra_configure_flags=""
     if [[ "$arch" == "x86" ]]; then
       msvc_bin_dir=$(dirname "$CC")
       x86_bin_dir="${msvc_bin_dir//\/x64/\/x86}"
@@ -55,6 +56,8 @@ for arch in "${arch_builds[@]}"; do
       export CXX="$x86_bin_dir/cl.exe"
       export LIB="${LIB//\\x64/\\x86}"; export LIB="${LIB//\/x64/\/x86}"
       export LIBPATH="${LIBPATH//\\x64/\\x86}"; export LIBPATH="${LIBPATH//\/x64/\/x86}"
+      # Force x86 target for MSVC compiler and linker
+      extra_configure_flags="--extra-cflags=-arch:IA32 --extra-ldflags=/MACHINE:X86"
       echo "[info] Switched MSVC environment to x86"
     fi
 
@@ -85,7 +88,8 @@ for arch in "${arch_builds[@]}"; do
             --host-ld='$CC' \
             --extra-cflags=-I$win_opus_prefix/include \
             --extra-ldflags=-L$win_opus_prefix/lib \
-            --extra-libs=opus.lib" \
+            --extra-libs=opus.lib \
+            $extra_configure_flags" \
         --disable-programs --disable-doc \
         --disable-network --disable-everything \
         --enable-runtime-cpudetect --enable-protocol=file \
