@@ -45,6 +45,9 @@ if is_windows; then
 fi
 
 for arch in "${arch_builds[@]}"; do
+  current_cc="$CC"
+  current_cxx="$CXX"
+
   if is_windows; then
     # Adjust MSVC environment for x86. build-toolkit defaults to x64.
     extra_cflags=""
@@ -53,8 +56,8 @@ for arch in "${arch_builds[@]}"; do
       msvc_bin_dir=$(dirname "$CC")
       x86_bin_dir="${msvc_bin_dir//\/x64/\/x86}"
       export PATH="$x86_bin_dir:$PATH"
-      export CC="$x86_bin_dir/cl.exe"
-      export CXX="$x86_bin_dir/cl.exe"
+      current_cc="$x86_bin_dir/cl.exe"
+      current_cxx="$x86_bin_dir/cl.exe"
       export LIB="${LIB//\\x64/\\x86}"; export LIB="${LIB//\/x64/\/x86}"
       export LIBPATH="${LIBPATH//\\x64/\\x86}"; export LIBPATH="${LIBPATH//\/x64/\/x86}"
       # Force x86 target for MSVC compiler and linker
@@ -85,9 +88,11 @@ for arch in "${arch_builds[@]}"; do
         --windows="--target-os=$(if [[ "$arch" == "x86" ]]; then echo win32; else echo win64; fi) \
             --arch=$arch \
             --toolchain=msvc \
+            --cc='$current_cc' \
+            --cxx='$current_cxx' \
             --enable-cross-compile \
-            --host-cc='$CC' \
-            --host-ld='$CC' \
+            --host-cc='$current_cc' \
+            --host-ld='$current_cc' \
             --extra-cflags='-I$win_opus_prefix/include $extra_cflags' \
             --extra-ldflags='-L$win_opus_prefix/lib $extra_ldflags' \
             --extra-libs=opus.lib" \
