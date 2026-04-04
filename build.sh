@@ -5,6 +5,13 @@ require xcode
 require venv
 require ndk
 
+if is_windows; then
+  export CC=$(cygpath -s -u "$CC")
+  export CXX=$(cygpath -s -u "$CXX")
+  export LIB=$(cygpath -s -u -p "$LIB")
+  export LIBPATH=$(cygpath -s -u -p "$LIBPATH")
+fi
+
 import patch-opus.sh
 import libraries.properties
 import libraries.properties from "github.com/pytgcalls/mesa"
@@ -60,9 +67,8 @@ for arch in "${arch_builds[@]}"; do
       -DCMAKE_INSTALL_LIBDIR=lib \
       -DCMAKE_INSTALL_INCLUDEDIR=include
 
-    win_opus_prefix=$(to_windows "$opus_prefix" | sed 's|\\|/|g')
-    export libopus_CFLAGS="-I$win_opus_prefix/include/opus"
-    export libopus_LIBS="$win_opus_prefix/lib/opus.lib"
+    export libopus_CFLAGS="-I$opus_prefix/include/opus"
+    export libopus_LIBS="$opus_prefix/lib/opus.lib"
     export LIBOPUS_CFLAGS="$libopus_CFLAGS"
     export LIBOPUS_LIBS="$libopus_LIBS"
 
@@ -76,8 +82,8 @@ for arch in "${arch_builds[@]}"; do
             --enable-cross-compile \
             --host-cc='$CC' \
             --host-ld='$CC' \
-            --extra-cflags=-I$win_opus_prefix/include \
-            --extra-ldflags=-L$win_opus_prefix/lib \
+            --extra-cflags=-I$opus_prefix/include \
+            --extra-ldflags=-L$opus_prefix/lib \
             --extra-libs=opus.lib" \
         --disable-programs --disable-doc \
         --disable-network --disable-everything \
